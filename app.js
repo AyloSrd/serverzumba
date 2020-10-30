@@ -1,16 +1,34 @@
-require("dotenv").config();
-require("./config/dbConnection");
+require("dotenv").config()
+require("./config/dbConnection")
 
-const express = require("express");
-const path = require("path");
-const cookieParser = require("cookie-parser");
-const logger = require("morgan");
-const session = require("express-session");
-const MongoStore = require("connect-mongo")(session);
-const mongoose = require("mongoose");
-const app = express();
-const cors = require("cors");
-
+const express = require("express")
+const path = require("path")
+const cookieParser = require("cookie-parser")
+const logger = require("morgan")
+const session = require("express-session")
+const MongoStore = require("connect-mongo")(session)
+const mongoose = require("mongoose")
+const app = express()
+const cors = require("cors")
+/**
+ * Server
+ */
+const port = process.env.PORT || '5000'
+app.set('port', port)
+const server = require('http').createServer(app)
+server.listen(port);
+server.on('error', err => console.error(err));
+server.on('listening', () => console.log('listening'));
+/**
+ * Socket
+ */
+const io = require('socket.io')(server)
+io.on('connection', socket => {
+  console.log(`Connected: ${socket.id}`)
+   
+   socket.on('disconnect', () =>
+      console.log(`Disconnected: ${socket.id}`))
+})
 /**
  * Middlewares
  */
