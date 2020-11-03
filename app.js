@@ -24,11 +24,29 @@ server.on('listening', () => console.log('listening'));
  */
 const io = require('socket.io')(server)
 io.on('connection', socket => {
-  console.log(`Connected: ${socket.id}`)
-   
-   socket.on('disconnect', () =>
-      console.log(`Disconnected: ${socket.id}`))
+  socket.on('join', (room, socketId) => {
+    console.log(`socket : ${socket.id}, peer : ${socketId}, joining room : ${room}`)
+    socket.join(room)
+    socket.to(room).broadcast.emit('classmate joined', socketId)
+  })
+ 
+  socket.on('coding', (code, room, socketId) => {
+    console.log(`code: ${code.html}, room: ${room}, id : ${socket.id}, peerId : ${socketId}`)
+    socket.to(room).broadcast.emit('sendingCode', code, socketId)
+  })
+
+  socket.on('runMinibrowser', (room, socketId) => {
+    console.log(`Running browser, room: ${room}, id : ${socket.id}, peerId : ${socketId}`)
+    socket.to(room).broadcast.emit('runMinibrowser', socketId)
+  })
+
+  socket.on('changeTab', (room, html, css, js) => {
+    console.log(html, css, js)
+    socket.to(room).broadcast.emit('changeTab', html, css, js)
+ })
+
 })
+
 /**
  * Middlewares
  */
