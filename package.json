@@ -17,6 +17,7 @@
     "express-session": "^1.17.1",
     "mongoose": "^5.9.13",
     "morgan": "~1.9.1",
+    "peer": "^0.5.3",
     "socket.io": "^2.3.0"
   }
 }
