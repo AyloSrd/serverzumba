@@ -23,12 +23,16 @@ server.on('listening', () => console.log('listening'));
 /**
  * Socket
  */
+const attending = {}
 const io = require('socket.io')(server)
 io.on('connection', socket => {
-  socket.on('join', (room, userName) => {
-    console.log(`socket : ${socket.id}, user : ${userName}, joining room : ${room}`)
+  socket.on('join', (room, userId) => {
+    console.log(`socket : ${socket.id}, user : ${userId}, joining room : ${room}`)
     socket.join(room)
-    socket.to(room).broadcast.emit('classmate joined', userName)
+    socket.to(room).broadcast.emit('classmate joined', userId)
+    if(!attending[room]) attending[room] = []
+    attending[room].push(userId)
+    console.log(attending)
   })
  
   socket.on('coding', (code, room, userName) => {
