@@ -55,6 +55,11 @@ io.on('connection', socket => {
     socket.to(room).broadcast.emit('callMe', peerId)
   })
 
+  socket.on('willDisconnect', (room, userId) => {
+    console.log('will disconnect', userId)
+    socket.to(room).broadcast.emit('willDisconnect', userId)
+  })
+
 })
 /**
  * Middlewares
