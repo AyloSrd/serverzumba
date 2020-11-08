@@ -23,16 +23,20 @@ server.on('listening', () => console.log('listening'));
 /**
  * Socket
  */
-const attending = {}
+const attendingLesson = {}
+const attendingRoom = {}
+const peers = {}
 const io = require('socket.io')(server)
 io.on('connection', socket => {
   socket.on('join', (room, userId) => {
     console.log(`socket : ${socket.id}, user : ${userId}, joining room : ${room}`)
     socket.join(room)
     socket.to(room).broadcast.emit('classmate joined', userId)
-    if(!attending[room]) attending[room] = []
-    attending[room].push(userId)
-    console.log(attending)
+    if(!attendingLesson[room]) attendingLesson[room] = []
+    attendingLesson[room].push(userId)
+    if(!attendingRoom[room]) attendingRoom[room] = []
+    attendingRoom[room].push(socket.id)
+    console.log(attendingRoom)
   })
  
   socket.on('coding', (code, room, userName) => {
@@ -53,13 +57,17 @@ io.on('connection', socket => {
   socket.on('callMe', (peerId, room) => {
     console.log('asking to be called', peerId)
     socket.to(room).broadcast.emit('callMe', peerId)
+    peers[socket.id] = peerId
+    console.log(peers)
   })
 
-  socket.on('willDisconnect', (room, userId) => {
-    console.log('will disconnect', userId)
-    socket.to(room).broadcast.emit('willDisconnect', userId)
-  })
 
+  socket.on('disconnect', () => {
+    const currentRoom = Object.keys(attendingRoom).find(key => attendingRoom[key].includes(socket.id))
+    const peerLeaving = peers[socket.id]
+    socket.to(currentRoom).broadcast.emit('I quit', peerLeaving)
+    console.log(peerLeaving)
+  })
 })
 /**
  * Middlewares
