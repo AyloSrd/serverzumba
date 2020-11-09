@@ -10,7 +10,7 @@ const MongoStore = require("connect-mongo")(session)
 const mongoose = require("mongoose")
 const app = express()
 const cors = require("cors")
-const { ExpressPeerServer } = require('peer')
+const Lesson = require('./models/Lesson')
 /**
  * Server
  */
@@ -23,42 +23,39 @@ server.on('listening', () => console.log('listening'));
 /**
  * Socket
  */
+
+const io = require('socket.io')(server)
+
 const attendingLesson = {}
 const attendingRoom = {}
 const peers = {}
-const io = require('socket.io')(server)
+const teachers = []
+
 io.on('connection', socket => {
   socket.on('join', (room, userId) => {
-    console.log(`socket : ${socket.id}, user : ${userId}, joining room : ${room}`)
     socket.join(room)
     socket.to(room).broadcast.emit('classmate joined', userId)
     if(!attendingLesson[room]) attendingLesson[room] = []
     attendingLesson[room].push(userId)
     if(!attendingRoom[room]) attendingRoom[room] = []
     attendingRoom[room].push(socket.id)
-    console.log(attendingRoom)
   })
  
-  socket.on('coding', (code, room, userName) => {
-    console.log(`code: ${code.html}, room: ${room}, id : ${socket.id}, peerId : ${userName}`)
-    socket.to(room).broadcast.emit('sendingCode', code, userName)
+  socket.on('coding', (code, room, userId) => {
+    socket.to(room).broadcast.emit('sendingCode', code, userId)
   })
 
   socket.on('runMinibrowser', (room, userName) => {
-    console.log(`Running browser, room: ${room}, id : ${socket.id}, peerId : ${userName}`)
     socket.to(room).broadcast.emit('runMinibrowser', userName)
   })
 
   socket.on('changeTab', (room, html, css, js) => {
-    console.log(html, css, js)
     socket.to(room).broadcast.emit('changeTab', html, css, js)
   })
 
   socket.on('callMe', (peerId, room) => {
-    console.log('asking to be called', peerId)
     socket.to(room).broadcast.emit('callMe', peerId)
     peers[socket.id] = peerId
-    console.log(peers)
   })
 
 
@@ -66,7 +63,6 @@ io.on('connection', socket => {
     const currentRoom = Object.keys(attendingRoom).find(key => attendingRoom[key].includes(socket.id))
     const peerLeaving = peers[socket.id]
     socket.to(currentRoom).broadcast.emit('I quit', peerLeaving)
-    console.log(peerLeaving)
   })
 })
 /**
