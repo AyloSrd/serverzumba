@@ -29,20 +29,23 @@ const io = require('socket.io')(server)
 const attendingLesson = {}
 const attendingRoom = {}
 const peers = {}
-const teachers = []
+const teachers = {}
+const codeSessions = {}
 
 io.on('connection', socket => {
-  socket.on('join', (room, userId) => {
+  socket.on('join', (room, userId, role) => {
     socket.join(room)
     socket.to(room).broadcast.emit('classmate joined', userId)
     if(!attendingLesson[room]) attendingLesson[room] = []
     attendingLesson[room].push(userId)
     if(!attendingRoom[room]) attendingRoom[room] = []
     attendingRoom[room].push(socket.id)
+    if(role === 'teacher') teachers[socket.id] = userId
   })
  
   socket.on('coding', (code, room, userId) => {
     socket.to(room).broadcast.emit('sendingCode', code, userId)
+    codeSessions[userId] = code
   })
 
   socket.on('runMinibrowser', (room, userName) => {
@@ -62,7 +65,30 @@ io.on('connection', socket => {
   socket.on('disconnect', () => {
     const currentRoom = Object.keys(attendingRoom).find(key => attendingRoom[key].includes(socket.id))
     const peerLeaving = peers[socket.id]
+    const teacherId = teachers[socket.id]
     socket.to(currentRoom).broadcast.emit('I quit', peerLeaving)
+    if(teacherId){
+      let html = ' '
+      let css = ' '
+      let js = ' ' 
+      if(codeSessions[teacherId]){
+        html = codeSessions[teacherId].html
+        css = codeSessions[teacherId].css
+        js = codeSessions[teacherId].js
+      }
+
+      Lesson.create({
+        lesson: currentRoom,
+        attending: [...new Set(attendingLesson[currentRoom])],
+        html, 
+        css, 
+        js,
+        library: currentRoom.split('-')[0],
+        teacher: teacherId
+      }).then(lessonCreated => console.log(lessonCreated))
+        .catch(err => console.error(err))
+      delete teachers[socket.id]
+    }
   })
 })
 /**
@@ -94,15 +120,19 @@ app.use(function (req, res, next) {
  * Routes
  */
 
-const authRouter = require("./routes/auth");
+const authRouter = require("./routes/auth")
+const lessonsRouter = require("./routes/lessons")
+const notesRouter = require("./routes/notes")
 
-app.use("/api/auth", authRouter);
+app.use("/api/auth", authRouter)
+app.use("/api/lessons", lessonsRouter)
+app.use("/api/notes", notesRouter)
 
 // 404 Middleware
 app.use((req, res, next) => {
-  const error = new Error("Ressource not found.");
-  error.status = 404;
-  next(err);
+  const error = new Error("Ressource not found.")
+  error.status = 404
+  next(err)
 });
 
 // Error handler middleware
