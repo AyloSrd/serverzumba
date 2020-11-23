@@ -3,9 +3,10 @@ const router = express.Router()
 const Lesson = require('../models/Lesson')
 
 router.get('/student/:studentId', (req, res, next) => { 
-  Lesson.find({ attending:req.params.studentId })
+  Lesson.find({ attending:req.params.studentId }).populate('teacher', 'userName')
     .then(studentLessons => {
-      if(!studentLessons) return res.status(400).json({ message: 'No lessons for this student' });
+      if(!studentLessons) return res.status(400).json({ message: 'No lessons for this student' })
+      console.log('student lessons', studentLessons)
       res.status(200).json(studentLessons)
     })
     .catch(next)

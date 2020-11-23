@@ -8,7 +8,8 @@ const lessonSchema = new Schema({
   css: String,
   js: String,
   library: String,
-  teacher: Schema.Types.ObjectId
+  updated: { type: Date, default: Date.now },
+  teacher: { type: Schema.Types.ObjectId, ref:'User' }
 });
 
 const Lesson = mongoose.model("Lesson", lessonSchema);

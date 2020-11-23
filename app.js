@@ -26,21 +26,32 @@ server.on('listening', () => console.log('listening'));
 
 const io = require('socket.io')(server)
 
-const attendingLesson = {}
-const attendingRoom = {}
-const peers = {}
-const teachers = {}
-const codeSessions = {}
+const attendingLesson = {} // { room : [ mongoId ] }
+const attendingRoom = {} // { room : [ socketId ] }
+const peers = {} // { socket.id : peerId }
+const teachers = {} // { socket.id : mongoId }
+const codeSessions = {} // { teacher's peerId : { html, css, js } }
 
 io.on('connection', socket => {
   socket.on('join', (room, userId, role) => {
     socket.join(room)
     socket.to(room).broadcast.emit('classmate joined', userId)
+    
     if(!attendingLesson[room]) attendingLesson[room] = []
     attendingLesson[room].push(userId)
+    
     if(!attendingRoom[room]) attendingRoom[room] = []
     attendingRoom[room].push(socket.id)
+    
     if(role === 'teacher') teachers[socket.id] = userId
+    
+    if(role === 'student') {
+      Object.keys(teachers).forEach(teacher => {
+        if(attendingRoom[room].includes(teacher)) {
+          io.to(socket.id).emit('teacher is', peers[teacher])
+        }
+      })
+    }
   })
  
   socket.on('coding', (code, room, userId) => {
@@ -84,10 +95,12 @@ io.on('connection', socket => {
         css, 
         js,
         library: currentRoom.split('-')[0],
-        teacher: teacherId
+        teacher: teacherId,
+        updated: new Date()
       }).then(lessonCreated => console.log(lessonCreated))
         .catch(err => console.error(err))
       delete teachers[socket.id]
+      delete peers[socket.id]
     }
   })
 })

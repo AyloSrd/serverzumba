@@ -30,7 +30,8 @@ router.post('/', (req, res, next) => {
 });
 
 router.delete('/:id', (req, res, next) => { 
-	Note.findByIdAndDelete(req.params.id)
+  console.log(req.params.id)
+  Note.findByIdAndDelete(req.params.id)
 	.then((noteDeleted) => {
 		res.status(200).json(noteDeleted._id)
 	})
