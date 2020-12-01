@@ -62,7 +62,7 @@ io.on('connection', socket => {
   socket.on('runMinibrowser', (room, userName) => {
     socket.to(room).broadcast.emit('runMinibrowser', userName)
   })
-
+  
   socket.on('changeTab', (room, html, css, js) => {
     socket.to(room).broadcast.emit('changeTab', html, css, js)
   })
@@ -72,6 +72,10 @@ io.on('connection', socket => {
     peers[socket.id] = peerId
   })
 
+  socket.on('chat', ( room, msg ) => {
+    console.log('sent from socket back', room)
+    socket.to(room).broadcast.emit('chat', msg)
+  })
 
   socket.on('disconnect', () => {
     const currentRoom = Object.keys(attendingRoom).find(key => attendingRoom[key].includes(socket.id))
